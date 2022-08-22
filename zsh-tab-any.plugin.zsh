@@ -186,7 +186,7 @@ _zic_complete() {
     local l matches fzf tokens base
 
     if [ -e "${(Q)@[-1]}" ]; then # 如果用户要搜索的东西已经存在了, 用户还是按了tab, 那说明不是用户想要的结果, 那就继续递归搜索下面的所有的
-        __fzf_file_widget_ex $1
+        __fzf_file_widget_ex $@
         return
     else
         l=$(_zic_list_generator $@)
@@ -196,7 +196,7 @@ _zic_complete() {
     #        echo "\n"
             matches=${(q)l}
         else
-            __fzf_file_widget_ex $1
+            __fzf_file_widget_ex $@
             return
         fi
     fi
@@ -484,7 +484,6 @@ __fzf_file_widget_ex() {
         fi
     fi
 
-    echo
     local ret=$?
     zle reset-prompt
     return $ret
@@ -498,19 +497,26 @@ zic-completion() {
     tokens=(${(z)LBUFFER})
 ##    cmd=${tokens[1]}
 #
-    _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
+#    _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
 
-    # if [[ "$LBUFFER" =~ "^\ *cd$" ]]; then
-    #   zle ${__zic_default_completion:-expand-or-complete}
-    # elif [ "$cmd" = cd ]; then
-    #   _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-    # # elif [[ "$LBUFFER" =~ "^\ *vim$" ]]; then
-    # #   zle ${__zic_default_completion:-expand-or-complete}
-    # # elif [ "$cmd" = vim ]; then
-    # #   _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-    # else
-    #   zle ${__zic_default_completion:-expand-or-complete}
-    # fi
+    if [[ "$cmd" = cd || "$cmd" = vim || "$cmd" = vi ]]; then
+        _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
+    else
+        zle ${__zic_default_completion:-expand-or-complete}
+    fi
+
+#     if [[ "$LBUFFER" =~ "^\ *cd$" && "$LBUFFER" =~ "^\ *vim$" ]]; then
+#       zle ${__zic_default_completion:-expand-or-complete}
+#     elif [ "$cmd" = cd ]; then
+#       _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
+     # elif [[ "$LBUFFER" =~ "^\ *vim$" ]]; then
+     #   zle ${__zic_default_completion:-expand-or-complete}
+     # elif [ "$cmd" = vim ]; then
+     #   _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
+#     else
+#        zle ${__zic_default_completion:-expand-or-complete}
+#        _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
+#     fi
 }
 
 [ -z "$__zic_default_completion" ] && {
