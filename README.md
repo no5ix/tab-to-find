@@ -4,7 +4,12 @@
 支持任何命令对于目录和文件的路径的 tab 自动补全
 
 
-## 功能
+# Demo
+
+![demo](tab-any-path-demo.gif)
+
+
+# 功能
 
 - 可以不一定是头部完全匹配, 比如 输入 `doc` 然后 tab , 可以匹配 `test_doc` 也可以匹配 `doc_test` 也可以匹配 `test_doc_test`
 - 可以递归匹配当前目录的子目录的所有 `doc` 的文件/目录, 也就是说你可以在 `home` 目录输入 `cd doc` 然后从 `home` 目录一步直接 `cd` 到 `~/github/test-proj/documents` 里 !
