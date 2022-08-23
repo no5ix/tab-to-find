@@ -5,12 +5,7 @@
 # 依赖 fd 和 fzf
 
 
-__zic_fzf_prog() {
-    [ -n "$TMUX_PANE" ] && [ "${FZF_TMUX:-0}" != 0 ] && [ ${LINES:-40} -gt 15 ] \
-        && echo "fzf-tmux -d${FZF_TMUX_HEIGHT:-40%}" || echo "fzf"
-}
-
-__zic_matched_subdir_list() {
+__do_pre_gen_subdir_res() {
     local dir length seg typeArg
     if [[ "$1" == */ ]]; then
         # 注意下方代码的 $(echo 4) 比如得这么写不然会和 zsh 不兼容导致错误, 这么写是最好的兼容性
@@ -56,7 +51,7 @@ __zic_matched_subdir_list() {
                 # if [[ "${seg[1]}" != "." && "${line[1]}" == "." ]]; then
                 #   continue
                 # fi
-    #                if [ "$zic_case_insensitive" = "true" ]; then
+    #                if [ "$tab_case_insensitive" = "true" ]; then
                     if [[ "$line:u" == *"$seg:u"* ]]; then
                         echo "$line"
                     fi
@@ -89,7 +84,7 @@ __zic_matched_subdir_list() {
 #                # if [[ "${seg[1]}" != "." && "${line[1]}" == "." ]]; then
 #                #   continue
 #                # fi
-##                if [ "$zic_case_insensitive" = "true" ]; then
+##                if [ "$tab_case_insensitive" = "true" ]; then
 #                    if [[ "$line:u" == "$seg:u"* ]]; then
 #                        echo "$line"
 #                    fi
@@ -119,7 +114,7 @@ __zic_matched_subdir_list() {
                 # if [[ "${seg[1]}" != "." && "${line[1]}" == "." ]]; then
                 #   continue
                 # fi
-#                if [ "$zic_case_insensitive" = "true" ]; then
+#                if [ "$tab_case_insensitive" = "true" ]; then
                     if [[ "$line:u" == *"$seg:u"* ]]; then
                         echo "$line"
                     fi
@@ -133,9 +128,9 @@ __zic_matched_subdir_list() {
     fi
 }
 
-__zic_fzf_bindings() {
+__tab_fzf_bindings() {
     autoload is-at-least
-    fzf=$(__zic_fzf_prog)
+    fzf=$(__fzfcmdex)
 
     if $(is-at-least '0.21.0' $(${=fzf} --version)); then
         echo 'shift-tab:up,tab:down,bspace:backward-delete-char/eof'
@@ -144,7 +139,7 @@ __zic_fzf_bindings() {
     fi
 }
 
-_zic_list_generator() {
+__pre_gen_subdir_res() {
     tokens=(${(z)LBUFFER})
     cmd=${tokens[1]}
 
@@ -167,7 +162,6 @@ _zic_list_generator() {
     cmd_to_slash_fd_type["cd"]="directory"
     cmd_to_slash_fd_type["vim"]="directory file"
 
-
 #    echo "before cmd: "${cmd}
     if [ -z ${cmd_to_fd_type["$cmd"]} ]; then
         cmd="other"
@@ -176,12 +170,12 @@ _zic_list_generator() {
 #    echo "alfter cmd_to_fd_type cmd: "${cmd_to_fd_type["$cmd"]}
 #    echo "alfter cmd_to_fd_depth cmd: "${cmd_to_fd_depth["$cmd"]}
 #    echo "alfter cmd_to_slash_fd_type cmd: "${cmd_to_slash_fd_type["$cmd"]}
-    __zic_matched_subdir_list "${(Q)@[-1]}" ${cmd_to_fd_type["$cmd"]} ${cmd_to_fd_depth["$cmd"]} ${cmd_to_slash_fd_type["$cmd"]} | sort
-    # __zic_matched_subdir_list "${(Q)@[-1]}" | sort
+    __do_pre_gen_subdir_res "${(Q)@[-1]}" ${cmd_to_fd_type["$cmd"]} ${cmd_to_fd_depth["$cmd"]} ${cmd_to_slash_fd_type["$cmd"]} | sort
+    # __do_pre_gen_subdir_res "${(Q)@[-1]}" | sort
 }
 
-# 这个是提前fd生成好结果供挑选, 有一定延迟, 不适合深度搜索, depth 在 5 层以下比较适合
-_zic_complete() {
+# 这个是提前fd生成好结果供挑选, 有一定延迟, 不适合深度搜索, depth 在 5 层以下比较适合, 目前配的是1层
+_tab_complete() {
     setopt localoptions nonomatch
     local l matches fzf tokens base
 
@@ -189,7 +183,7 @@ _zic_complete() {
         __fzf_file_widget_ex $@
         return
     else
-        l=$(_zic_list_generator $@)
+        l=$(__pre_gen_subdir_res $@)
     #   如果检测当前文件夹的只有一个返回结果, 而且不为空字符串则直接补全, 否则在子文件夹里递归搜索
         if [[ $(echo $l | wc -l) -eq 1 && -n "$l" ]]; then
     #        echo "\n only 1: "$l
@@ -375,7 +369,7 @@ __get_fd_result() {
 #    echo "\n"
 #    local cmd="command fd . --follow -HI --exclude '.git' --exclude '.svn' --type f --max-depth 5 2>/dev/null"
     local cmd="$1"
-    fzf_bindings=$(__zic_fzf_bindings)
+    fzf_bindings=$(__tab_fzf_bindings)
     setopt localoptions pipefail no_aliases 2> /dev/null
     local item
 #    eval "$cmd" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS $FZF_CTRL_T_OPTS" $(__fzfcmdex) -m "$@" | while read item; do
@@ -392,7 +386,7 @@ __fzfcmdex() {
         echo "fzf-tmux ${FZF_TMUX_OPTS:--d${FZF_TMUX_HEIGHT:-40%}} -- " || echo "fzf"
 }
 
-# 这个不是提前fd生成好结果供挑选, 而是直接 fzf 动态 fd 的, 适合深度搜索, depth 在 1 层的用 _zic_complete 函数比较适合
+# 这个不是提前fd生成好结果供挑选, 而是直接 fzf 动态 fd 的, 适合深度搜索, depth 在 1 层的用 _tab_complete 函数比较适合
 __fzf_file_widget_ex() {
     local fd_cmd fd_res tokens base seg
 
@@ -408,7 +402,11 @@ __fzf_file_widget_ex() {
     if [ -e $base ]; then
         seg=""
     else
-        seg=$(basename -- "$base") # 比如: [root@web-01 ~]# basename /usr/bin/sort     得到sort
+        if [[ "${base}" == "-"* || "${base}" == "--"* ]]; then  # 比如类似 `ln -s` 或者 `ln -s ` 则 seg应该要为空才对
+            seg=""
+        else
+            seg=$(basename -- "$base") # 比如: [root@web-01 ~]# basename /usr/bin/sort     得到sort
+        fi
     fi
 
 #    echo "\n __fzf_file_widget_ex seg: "${seg}
@@ -489,50 +487,59 @@ __fzf_file_widget_ex() {
     return $ret
 }
 
-zic-completion() {
-    setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
-#    local tokens cmd
-    local tokens
-#
-    tokens=(${(z)LBUFFER})
-##    cmd=${tokens[1]}
-#
-#    _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-
-    if [[ "$cmd" = cd || "$cmd" = vim || "$cmd" = vi ]]; then
-        _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-    else
-        zle ${__zic_default_completion:-expand-or-complete}
-    fi
-
-#     if [[ "$LBUFFER" =~ "^\ *cd$" && "$LBUFFER" =~ "^\ *vim$" ]]; then
-#       zle ${__zic_default_completion:-expand-or-complete}
-#     elif [ "$cmd" = cd ]; then
-#       _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-     # elif [[ "$LBUFFER" =~ "^\ *vim$" ]]; then
-     #   zle ${__zic_default_completion:-expand-or-complete}
-     # elif [ "$cmd" = vim ]; then
-     #   _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-#     else
-#        zle ${__zic_default_completion:-expand-or-complete}
-#        _zic_complete ${tokens[2,${#tokens}]/#\~/$HOME}
-#     fi
+# cd into the directory of the selected file
+cd() {
+   if [ -z $1 ]; then
+#        echo "\n z : "$1
+        builtin cd
+        return
+   fi
+   if [ -d $1 ]; then
+       builtin cd "$1"
+   else
+        local dir=$(dirname "$1")
+#        echo "\n dir : "${dir}
+        builtin cd "$dir"
+   fi
 }
 
-[ -z "$__zic_default_completion" ] && {
+tab-completion() {
+    setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
+    local tokens cmd base
+
+    tokens=(${(z)LBUFFER})
+    cmd=${tokens[1]}
+
+    if [[ "${LBUFFER}" == *" -" || "${LBUFFER}" == *" --" ]]; then
+        zle ${__tab_default_completion:-expand-or-complete}
+        return
+    fi
+
+    takeover_arr=(cd vim vi ls ll l cp mv ln cat rm chmod chown)
+    for i in ${takeover_arr[@]}; do
+        if [ "$cmd" = "$i" ]; then
+            _tab_complete ${tokens[2,${#tokens}]/#\~/$HOME}
+            return
+        fi
+    done
+
+    zle ${__tab_default_completion:-expand-or-complete}
+}
+
+[ -z "$__tab_default_completion" ] && {
     binding=$(bindkey '^I')
     # $binding[(s: :w)2]
     # The command substitution and following word splitting to determine the
     # default zle widget for ^I formerly only works if the IFS parameter contains
     # a space via $binding[(w)2]. Now it specifically splits at spaces, regardless
     # of IFS.
-    [[ $binding =~ 'undefined-key' ]] || __zic_default_completion=$binding[(s: :w)2]
+    [[ $binding =~ 'undefined-key' ]] || __tab_default_completion=$binding[(s: :w)2]
     unset binding
 }
 
-zle -N zic-completion
-if [ -z $zic_custom_binding ]; then
-    zic_custom_binding='^I'
+zle -N tab-completion
+if [ -z $tab_custom_binding ]; then
+    tab_custom_binding='^I'
 fi
-bindkey "${zic_custom_binding}" zic-completion
+bindkey "${tab_custom_binding}" tab-completion
 
