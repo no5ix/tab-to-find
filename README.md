@@ -73,11 +73,6 @@ git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custo
 ```
 
 
-# Usage
-
-Press tab for completion as usual
-
-
 # 使用方法
 
 跟平时一样按tab就完事
@@ -89,3 +84,8 @@ Press tab for completion as usual
       - 比如匹配到了 `Documents/` , 但如果这不是你想要的, 你想要的是 `~/github/test-proj/documents` , 那你可以再按一次tab
    - 如果不只是有一个匹配项, 则会递归搜索子目录下的所有含有 `doc` 的文件夹
 - 同理 `vi`, `ln`, `mv`, `cp` 等等其他命令也是如此
+
+
+# Usage
+
+Press tab for completion as usual
