@@ -29,13 +29,13 @@
 先克隆一波这个项目
 
 ```zsh
-git clone https://github.com/no5ix/fzf-tab ~/somewhere
+git clone https://github.com/no5ix/tab-any-path ~/somewhere
 ```
 
 然后把下面这行加到你的 `~/.zshrc`.
 
 ```zsh
-source ~/somewhere/fzf-tab.plugin.zsh
+source ~/somewhere/tab-any-path.plugin.zsh
 ```
 
 ## OhMyZsh方式
@@ -62,19 +62,19 @@ git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custo
 clone this repository.
 
 ```zsh
-git clone https://github.com/no5ix/fzf-tab ~/somewhere
+git clone https://github.com/no5ix/tab-any-path ~/somewhere
 ```
 
 Then add the following line to your `~/.zshrc`.
 
 ```zsh
-source ~/somewhere/fzf-tab.plugin.zsh
+source ~/somewhere/tab-any-path.plugin.zsh
 ```
 
 
 ## OhMyZsh
 
-Clone this repository to your custom directory and then add `fzf-tab` to your plugin list.
+Clone this repository to your custom directory and then add `tab-any-path` to your plugin list.
 
 ```zsh
 git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/tab-any-path
