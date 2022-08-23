@@ -49,7 +49,7 @@ git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custo
 ```
 
 1. 然后`vim ~/.zshrc`, 找到七八十行左右 `plugins=(git)` 的位置 比如原来是 `plugins=(git)` 则改为 `plugins=(git tab-any-path)`
-3. `source ~/.zshrc` 或者重启 zsh
+2. `source ~/.zshrc` 或者重启 zsh
 
 
 # Installation
