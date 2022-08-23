@@ -5,16 +5,53 @@
 # 依赖 fd 和 fzf
 
 
+
+# cd into the directory of the selected file
+cd() {
+   if [ -z $1 ]; then
+#        echo "\n z : "$1
+        builtin cd
+        return
+   fi
+   if [ -d $1 ]; then
+       builtin cd "$1"
+   else
+        if [ -e $1 ]; then
+            local dir=$(dirname "$1")
+    #        echo "\n dir : "${dir}
+            builtin cd "$dir"
+        else
+            builtin cd "$1"
+        fi
+   fi
+}
+
+__tab_fzf_bindings() {
+    autoload is-at-least
+    fzf=$(__fzf_cmd_ex)
+
+    if $(is-at-least '0.21.0' $(${=fzf} --version)); then
+        echo 'shift-tab:up,tab:down,bspace:backward-delete-char/eof'
+    else
+        echo 'shift-tab:up,tab:down'
+    fi
+}
+
+__fzf_cmd_ex() {
+    [ -n "$TMUX_PANE" ] && { [ "${FZF_TMUX:-0}" != 0 ] || [ -n "$FZF_TMUX_OPTS" ]; } &&
+        echo "fzf-tmux ${FZF_TMUX_OPTS:--d${FZF_TMUX_HEIGHT:-40%}} -- " || echo "fzf"
+}
+
 __pre_gen_subdir_res() {
-    local dir length seg typeArg
-    typeArg=$2
+    local dir length seg type_arg
+    type_arg=$2
     if [[ "$1" == */ ]]; then
 #        # 注意下方代码的 $(echo 4) 比如得这么写不然会和 zsh 不兼容导致错误, 这么写是最好的兼容性
 #        for fd_search_type in $(echo $4); do
 ##            echo "fd_search_type: "${fd_search_type}
-#            typeArg=${typeArg}" --type "${fd_search_type}
+#            type_arg=${type_arg}" --type "${fd_search_type}
 #        done
-#        echo "typeArg: "${typeArg}
+#        echo "type_arg: "${type_arg}
 
         if [ -e $1 ]; then
 #           echo "文件夹存在"
@@ -27,9 +64,9 @@ __pre_gen_subdir_res() {
                 length=0
             fi
             # 注意: command sed s'/\/$//' 是用来去除最后的 斜杠的, 免得补全多一个斜杠
-            # 注意下方代码的 $(echo $typeArg) 比如得这么写不然 会识别为 字符串导致错误
+            # 注意下方代码的 $(echo $type_arg) 比如得这么写不然 会识别为 字符串导致错误
             # find -L "$dir" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//'  | while read -r line; do
-            fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $typeArg) --max-depth 1 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//' | while read -r line; do
+            fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//' | while read -r line; do
                 # if [[ "${line[1]}" == "." ]]; then
                 #   continue
                 # fi
@@ -57,16 +94,20 @@ __pre_gen_subdir_res() {
 
     else
 #        for fd_search_type in $(echo $2); do
-#            typeArg=${typeArg}" --type "${fd_search_type}
+#            type_arg=${type_arg}" --type "${fd_search_type}
 #        done
 
-        dir=$(dirname -- "$1") # 比如 dirname /etc/init.d/acpid 则得到 /etc/init.d
+        if [[ "$1" = "../" || "$1" = ".." ]]; then
+            dir=".."
+        else
+            dir=$(dirname -- "$1") # 比如 dirname /etc/init.d/acpid 则得到 /etc/init.d
+        fi
         length=$(echo -n "$dir" | wc -c) # 得到 dir 的字符串长度
         if [ "$dir" = "/" ]; then
             length=0
         fi
         seg=$(basename -- "$1") # 比如: [root@web-01 ~]# basename /usr/bin/sort     得到sort
-            fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $typeArg) --max-depth 1 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//' | while read -r line; do
+            fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//' | while read -r line; do
                     if [[ "$line:u" == *"$seg:u"* ]]; then
                         echo "$line"
                     fi
@@ -74,33 +115,29 @@ __pre_gen_subdir_res() {
     fi
 }
 
-__tab_fzf_bindings() {
-    autoload is-at-least
-    fzf=$(__fzf_cmd_ex)
-
-    if $(is-at-least '0.21.0' $(${=fzf} --version)); then
-        echo 'shift-tab:up,tab:down,bspace:backward-delete-char/eof'
-    else
-        echo 'shift-tab:up,tab:down'
-    fi
-}
-
 __gen_fd_cmd() {
-    local dir length typeArg
+    local dir length type_arg max_depth_arg
+    type_arg=$2
 
 #    一共有几种情况:
-#    - `cd doc/tst` , 此时应该要递归搜索 doc下的所有
-#    - `cd doc/test_folder/` , 此时应该要递归搜索 doc下的所有
-#    - `cd doc/test_file` , 此时应该要递归搜索 doc下的所有
+#    - `cd doc/test_folder/` ,而 test_folder 存在,  此时应该要递归搜索 doc下的所有
+#    - `cd doc/test_folder` , 而 test_folder 存在, 此时应该要递归搜索 doc下的所有
 #    - `cd doc/dafadfa` , 而 dafadfa 不存在, 此时应该要递归搜索 doc下的所有
-#    - `cd doc/dfsss/` , 而 dfsss/ 不存在, 此时应该要递归搜索 doc下的所有
+#    - `cd doc/dafadfa/` , 而 dafadfa/ 不存在, 此时应该要只搜索 doc下的这一层, 而非递归
 
-    dir=$(dirname -- "$1") # 比如 dirname /etc/init.d/acpid 则得到 /etc/init.d
+    if [[ "$1" == */ && ! -e $1 ]]; then
+        max_depth_arg=" --max-depth 1"
+    fi
+    if [[ "$1" = "../" || "$1" = ".." ]]; then
+        dir=".."
+    else
+        dir=$(dirname -- "$1") # 比如 dirname /etc/init.d/acpid 则得到 /etc/init.d
+    fi
     length=$(echo -n "$dir" | wc -c) # 得到 dir 的字符串长度
     if [ "$dir" = "/" ]; then
         length=0
     fi
-    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $2 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//'"
+    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg $max_depth_arg 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//'"
 }
 
 # Paste the selected file path(s) into the command line
@@ -121,18 +158,13 @@ __get_fd_result() {
     return $ret
 }
 
-__fzf_cmd_ex() {
-    [ -n "$TMUX_PANE" ] && { [ "${FZF_TMUX:-0}" != 0 ] || [ -n "$FZF_TMUX_OPTS" ]; } &&
-        echo "fzf-tmux ${FZF_TMUX_OPTS:--d${FZF_TMUX_HEIGHT:-40%}} -- " || echo "fzf"
-}
-
 # 这个不是提前fd生成好结果供挑选, 而是直接 fzf 动态 fd 的, 适合深度搜索, depth 在 1 层的用 _tab_complete 函数比较适合
 _tab_complete() {
     setopt localoptions nonomatch
     local l matches fzf tokens base fd_cmd fd_res seg
     local is_pre_gen=0
 
-#    typeArg="${(Q)@[-1]}"
+#    type_arg="${(Q)@[-1]}"
     base="${(Q)@[-2]}"
 
     # 如果用户要搜索的东西已经存在了, 用户还是按了tab, 那说明不是用户想要的结果, 那就继续递归搜索下面的所有的
@@ -153,9 +185,6 @@ _tab_complete() {
     if ! [ -n "$fd_res" ]; then
         fd_cmd=$(__gen_fd_cmd $@)
     #    echo "__fzf_file_widget_ex fd_cmd:\n "${fd_cmd}
-
-    #    LBUFFER="${LBUFFER}$(__get_fd_result $fd_cmd)"
-    #    fd_res=$(__get_fd_result $fd_cmd)
     #    echo "\n __fzf_file_widget_ex base: "${base}
 
         # 获取要放到 fzf 窗口的待搜字符串 seg
@@ -172,9 +201,9 @@ _tab_complete() {
     #    echo "\n __fzf_file_widget_ex seg: "${seg}
 
         fd_res=$(__get_fd_result $fd_cmd $seg)
-    #    echo "\n __fzf_file_widget_ex fd_res: \n"${fd_res}
-    #    echo "3 LBUFFER: "${LBUFFER}
     fi
+
+#    echo "\n __fzf_file_widget_ex fd_res: "${fd_res}
 
     if [ -n "$fd_res" ]; then
         tokens=(${(z)LBUFFER})
@@ -190,12 +219,15 @@ _tab_complete() {
     #       1. 比如用户输入 `cd /home/musk/doc/` 如果 doc 这个文件目录存在, 那用户如果选了候选的 `acfun`, 那应该变为 `cd /home/musk/acfun/`
     #       2. `cd /home/musk/doc/acfun` , 那用户如果选了候选的 `acfun`, 那用户的输入应该保持不变, 而不是变为 `cd /home/musk/doc/acfunacfun`
 
-#        if ! [[ -e $base && "$base" == */ ]]; then
+        if [[ "$base" = "../" || "$base" = ".." ]]; then
+            base=".."
+        else
             base="$(dirname -- "$base")"
-            if [[ ${base[-1]} != / ]]; then
-                base="$base/"
-            fi
-#        fi
+        fi
+
+        if [[ ${base[-1]} != / ]]; then
+            base="$base/"
+        fi
 
         tokens_cnt=${#tokens[*]}
 #        echo "#tokens: "${tokens_cnt}
@@ -214,8 +246,8 @@ _tab_complete() {
             LBUFFER="${tokens[1]} "
         fi
 
-#        echo "before LBUFFER: "${LBUFFER}
-#        echo "2 base : "${base}
+#        echo "\n before LBUFFER: "${LBUFFER}
+#        echo "\n 2 base : "${base}
 
         local absolute_path_base=$base
         if [ -n "$base" ]; then
@@ -254,29 +286,21 @@ _tab_complete() {
     return $ret
 }
 
-# cd into the directory of the selected file
-cd() {
-   if [ -z $1 ]; then
-#        echo "\n z : "$1
-        builtin cd
-        return
-   fi
-   if [ -d $1 ]; then
-       builtin cd "$1"
-   else
-        local dir=$(dirname "$1")
-#        echo "\n dir : "${dir}
-        builtin cd "$dir"
-   fi
-}
-
 tab-completion() {
     setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
     local tokens cmd base
+    local type_arg=""
 
     tokens=(${(z)LBUFFER})
     cmd=${tokens[1]}
 
+    # 空tab 直接搜索
+    if [ -z "${LBUFFER}" ]; then
+        _tab_complete ${tokens[2,${#tokens}]/#\~/$HOME} ${type_arg}
+        return
+    fi
+
+    # 类似 `ln -` 和 `ln --` 这种就不用补了
     if [[ "${LBUFFER}" == *" -" || "${LBUFFER}" == *" --" ]]; then
         zle ${__tab_default_completion:-expand-or-complete}
         return
@@ -285,26 +309,25 @@ tab-completion() {
     declare -A fd_type_2_cmd
     fd_type_2_cmd["file"]="cat tac nl more less head tail vim vi"
     fd_type_2_cmd["directory"]="rmdir mkdir cd ls ll l"
-    fd_type_2_cmd["anything"]="rm chmod chown cp mv ln "
+    fd_type_2_cmd["anything"]="rm chmod chown cp mv ln"
 
-    local typeArg=""
     local shouldTakeover=0
     for cmd_str in $(echo ${fd_type_2_cmd["directory"]}); do
         if [ "$cmd" = "$cmd_str" ]; then
             shouldTakeover=1
-            typeArg="--type directory"
+            type_arg="--type directory"
             break
         fi
     done
-    if [ -z $typeArg ]; then
+    if [ -z $type_arg ]; then
         for cmd_str in $(echo ${fd_type_2_cmd["file"]}); do
             if [ "$cmd" = "$cmd_str" ]; then
                 shouldTakeover=1
-                typeArg="--type file"
+                type_arg="--type file"
                 break
             fi
         done
-        if [ -z $typeArg ]; then
+        if [ -z $type_arg ]; then
             for cmd_str in $(echo ${fd_type_2_cmd["anything"]}); do
                 if [ "$cmd" = "$cmd_str" ]; then
                     shouldTakeover=1
@@ -315,7 +338,7 @@ tab-completion() {
     fi
 
     if [ $shouldTakeover -eq 1 ]; then
-        _tab_complete ${tokens[2,${#tokens}]/#\~/$HOME} ${typeArg}
+        _tab_complete ${tokens[2,${#tokens}]/#\~/$HOME} ${type_arg}
     else
         zle ${__tab_default_completion:-expand-or-complete}
     fi
