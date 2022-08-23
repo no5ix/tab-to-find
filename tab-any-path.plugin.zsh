@@ -46,13 +46,6 @@ __pre_gen_subdir_res() {
     local dir length seg type_arg
     type_arg=$2
     if [[ "$1" == */ ]]; then
-#        # 注意下方代码的 $(echo 4) 比如得这么写不然会和 zsh 不兼容导致错误, 这么写是最好的兼容性
-#        for fd_search_type in $(echo $4); do
-##            echo "fd_search_type: "${fd_search_type}
-#            type_arg=${type_arg}" --type "${fd_search_type}
-#        done
-#        echo "type_arg: "${type_arg}
-
         if [ -e $1 ]; then
 #           echo "文件夹存在"
             dir="$1"
@@ -93,10 +86,6 @@ __pre_gen_subdir_res() {
         fi
 
     else
-#        for fd_search_type in $(echo $2); do
-#            type_arg=${type_arg}" --type "${fd_search_type}
-#        done
-
         if [[ "$1" = "../" || "$1" = ".." ]]; then
             dir=".."
         else
@@ -161,17 +150,20 @@ __get_fd_result() {
 # 这个不是提前fd生成好结果供挑选, 而是直接 fzf 动态 fd 的, 适合深度搜索, depth 在 1 层的用 _tab_complete 函数比较适合
 _tab_complete() {
     setopt localoptions nonomatch
-    local l matches fzf tokens base fd_cmd fd_res seg
+    local l matches fzf tokens base fd_cmd fd_res seg cmd
     local is_pre_gen=0
 
-#    type_arg="${(Q)@[-1]}"
-    base="${(Q)@[-2]}"
+    tokens=(${(z)LBUFFER})
+    cmd=${tokens[1]}
+    base="$1"
+
+#    echo "\n __fzf_file_widget_ex Q1: "${(Q)@[-1]}
+#    echo "\n __fzf_file_widget_ex Q2: "${(Q)@[-2]}
+#    echo "\n __fzf_file_widget_ex 1 base: "${base}
 
     # 如果用户要搜索的东西已经存在了, 用户还是按了tab, 那说明不是用户想要的结果, 那就继续递归搜索下面的所有的
     # 如果用户要搜索的东西不存在那就先试着搜索当前文件夹下的
     if ! [ -e $base ]; then
-#        __fzf_file_widget_ex $@
-#        return
         l=$(__pre_gen_subdir_res $@)
     #   如果检测当前文件夹的只有一个返回结果, 而且不为空字符串则直接补全, 否则在子文件夹里递归搜索
         if [[ $(echo $l | wc -l) -eq 1 && -n "$l" ]]; then
@@ -185,7 +177,7 @@ _tab_complete() {
     if ! [ -n "$fd_res" ]; then
         fd_cmd=$(__gen_fd_cmd $@)
     #    echo "__fzf_file_widget_ex fd_cmd:\n "${fd_cmd}
-    #    echo "\n __fzf_file_widget_ex base: "${base}
+#        echo "\n __fzf_file_widget_ex 2 base: "${base}
 
         # 获取要放到 fzf 窗口的待搜字符串 seg
         if [ -e $base ]; then
@@ -198,7 +190,7 @@ _tab_complete() {
             fi
         fi
 
-    #    echo "\n __fzf_file_widget_ex seg: "${seg}
+#        echo "\n __fzf_file_widget_ex seg: "${seg}
 
         fd_res=$(__get_fd_result $fd_cmd $seg)
     fi
@@ -206,7 +198,6 @@ _tab_complete() {
 #    echo "\n __fzf_file_widget_ex fd_res: "${fd_res}
 
     if [ -n "$fd_res" ]; then
-        tokens=(${(z)LBUFFER})
 
 #        echo "4 LBUFFER: "${LBUFFER}
 #        echo "tokens: "${tokens}
@@ -288,15 +279,21 @@ _tab_complete() {
 
 tab-completion() {
     setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
-    local tokens cmd base
+    local tokens cmd
+    local base=""
     local type_arg=""
 
     tokens=(${(z)LBUFFER})
+    tokens_cnt=${#tokens[*]}
     cmd=${tokens[1]}
+
+    if [ $tokens_cnt -ge 2 ]; then
+        base=${tokens[-1]}
+    fi
 
     # 空tab 直接搜索
     if [ -z "${LBUFFER}" ]; then
-        _tab_complete ${tokens[2,${#tokens}]/#\~/$HOME} ${type_arg}
+        _tab_complete ${base} ${type_arg}
         return
     fi
 
@@ -312,6 +309,7 @@ tab-completion() {
     fd_type_2_cmd["anything"]="rm chmod chown cp mv ln"
 
     local shouldTakeover=0
+    # 注意下方代码的 $(echo ${fd_type_2_cmd["directory"]}) 比如得这么写不然会和 zsh 不兼容导致错误, 这么写是最好的兼容性
     for cmd_str in $(echo ${fd_type_2_cmd["directory"]}); do
         if [ "$cmd" = "$cmd_str" ]; then
             shouldTakeover=1
@@ -337,8 +335,10 @@ tab-completion() {
         fi
     fi
 
+#    echo "\n base: "${base}
+
     if [ $shouldTakeover -eq 1 ]; then
-        _tab_complete ${tokens[2,${#tokens}]/#\~/$HOME} ${type_arg}
+        _tab_complete ${base} ${type_arg}
     else
         zle ${__tab_default_completion:-expand-or-complete}
     fi
