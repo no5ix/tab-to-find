@@ -23,9 +23,9 @@
 
 # 安装方法
 
-1. 先安装 [fd](https://github.com/sharkdp/fd#installation).
-2. 先安装 [fzf](https://github.com/junegunn/fzf#installation).
-3. 然后再按照下方的[手动方式](#手动方式)或者走[Oh-My-Zsh方式](#OhMyZsh方式)的方式来安装 `tab-any-path`
+1. 先安装fd, 按照 [fd的安装方法](https://github.com/sharkdp/fd#installation) 安装一下就行(一般来说就是一行命令就搞定), 不用额外配置
+2. 再安装fzf, 按照 [fzf的安装方法](https://github.com/junegunn/fzf#installation) 安装一下就行(一般来说就是一行命令就搞定), 不用额外配置
+3. 然后再按照下方的[手动方式](#手动方式)或者走[Oh-My-Zsh方式](#OhMyZsh方式)的方式来安装 `tab-any-path` 就可以了
 
 
 ## 手动方式
