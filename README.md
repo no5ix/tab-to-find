@@ -25,7 +25,7 @@
 
 1. 先安装 [fd](https://github.com/sharkdp/fd#installation).
 2. 先安装 [fzf](https://github.com/junegunn/fzf#installation).
-3. 然后再按照下方的[手动方式](#手动方式)或者走[Oh-My-Zsh方式](#OhMyZsh方式)的方式
+3. 然后再按照下方的[手动方式](#手动方式)或者走[Oh-My-Zsh方式](#OhMyZsh方式)的方式来安装 `tab-any-path`
 
 
 ## 手动方式
@@ -58,7 +58,7 @@ git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custo
 
 1. Install [fd](https://github.com/sharkdp/fd) by following its [installation instruction](https://github.com/sharkdp/fd#installation).
 2. Install [fzf](https://github.com/junegunn/fzf) by following its [installation instruction](https://github.com/junegunn/fzf#installation).
-3. then follow [Manual](#Manual) or [Oh-My-Zsh](#OhMyZsh) below
+3. then install `tab-any-path` by following [Manual](#Manual) or [Oh-My-Zsh](#OhMyZsh) below
 
 
 ## Manual
