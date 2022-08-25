@@ -46,8 +46,8 @@ __pre_gen_subdir_res() {
     local dir length last_str seg type_arg 
     dir="$1"
     type_arg="$2"
-    seg="$3"
-    last_str="$4"
+    last_str="$3"
+    seg="$4"
 
 #    echo "\n __pre_gen_subdir_res last_str: ${last_str}"
 #    echo "\n __pre_gen_subdir_res type_arg: ${type_arg}"
@@ -84,8 +84,8 @@ __gen_fd_cmd() {
     local dir length type_arg max_depth_arg last_str seg
     dir="$1"
     type_arg="$2"
-    seg="$3"
-    last_str="$4"
+    last_str="$3"
+    seg="$4"
 
 #    一共有几种情况:
 #    - `cd doc/test_folder/` ,而 test_folder 存在,  此时应该要递归搜索 doc下的所有
@@ -146,8 +146,8 @@ _tab_complete() {
     tokens=(${(z)LBUFFER})
     cmd=${tokens[1]}
     dir="$1"
-    seg="$3"
-    last_str="$4"
+    last_str="$3"
+    seg="$4"
 
 #    echo "\n __fzf_file_widget_ex s1: $1"
 #    echo "\n __fzf_file_widget_ex s2: $2"
@@ -182,7 +182,7 @@ _tab_complete() {
         fd_cmd=$(__gen_fd_cmd $@)
     #    echo "__fzf_file_widget_ex fd_cmd:\n "${fd_cmd}
 #        echo "\n __fzf_file_widget_ex 2 last_str: "${last_str}
-#        echo "\n __fzf_file_widget_ex seg: "${seg}
+        echo "\n __fzf_file_widget_ex seg: "${seg}
         fd_res=$(__get_fd_result $fd_cmd $seg)
     fi
 
@@ -290,7 +290,7 @@ tab-completion() {
     # 空tab 直接搜索
     if [ -z "${LBUFFER}" ]; then
         # 注意这些参数的摆放位置, 因为 seg 和 last_str 是有可能为空的, 如果放在中间的话, shell 会导致 $3 变 $2 , 因为空字符串不被视为一个参数
-        _tab_complete ${dir} ${type_arg} ${seg} ${last_str}
+        _tab_complete ${dir} ${type_arg} ${last_str} ${seg}
         return
     fi
 
@@ -332,16 +332,16 @@ tab-completion() {
         fi
     fi
 
-#    echo "\n tab-completion dir: "${dir}
-#    echo "\n tab-completion seg: "${seg}
-#    echo "\n tab-completion type_arg: "${type_arg}
-#    echo "\n tab-completion last_str: "${last_str}
-#    echo "\n tab-completion cmd: "${cmd}
-#    echo "\n tab-completion shouldTakeover: "${shouldTakeover}
+    echo "\n tab-completion dir: "${dir}
+    echo "\n tab-completion seg: "${seg}
+    echo "\n tab-completion type_arg: "${type_arg}
+    echo "\n tab-completion last_str: "${last_str}
+    echo "\n tab-completion cmd: "${cmd}
+    echo "\n tab-completion shouldTakeover: "${shouldTakeover}
 
     if [ $shouldTakeover -eq 1 ]; then
         # 注意这些参数的摆放位置, 因为 seg 和 last_str 是有可能为空的, 如果放在中间的话, shell 会导致 $3 变 $2 , 因为空字符串不被视为一个参数
-        _tab_complete ${dir} ${type_arg} ${seg} ${last_str}
+        _tab_complete ${dir} ${type_arg} ${last_str} ${seg}
     else
         zle ${__tab_default_completion:-expand-or-complete}
     fi
