@@ -182,7 +182,7 @@ _tab_complete() {
         fd_cmd=$(__gen_fd_cmd $@)
     #    echo "__fzf_file_widget_ex fd_cmd:\n "${fd_cmd}
 #        echo "\n __fzf_file_widget_ex 2 last_str: "${last_str}
-        echo "\n __fzf_file_widget_ex seg: "${seg}
+#        echo "\n __fzf_file_widget_ex seg: "${seg}
         fd_res=$(__get_fd_result $fd_cmd $seg)
     fi
 
@@ -332,12 +332,12 @@ tab-completion() {
         fi
     fi
 
-    echo "\n tab-completion dir: "${dir}
-    echo "\n tab-completion seg: "${seg}
-    echo "\n tab-completion type_arg: "${type_arg}
-    echo "\n tab-completion last_str: "${last_str}
-    echo "\n tab-completion cmd: "${cmd}
-    echo "\n tab-completion shouldTakeover: "${shouldTakeover}
+#    echo "\n tab-completion dir: "${dir}
+#    echo "\n tab-completion seg: "${seg}
+#    echo "\n tab-completion type_arg: "${type_arg}
+#    echo "\n tab-completion last_str: "${last_str}
+#    echo "\n tab-completion cmd: "${cmd}
+#    echo "\n tab-completion shouldTakeover: "${shouldTakeover}
 
     if [ $shouldTakeover -eq 1 ]; then
         # 注意这些参数的摆放位置, 因为 seg 和 last_str 是有可能为空的, 如果放在中间的话, shell 会导致 $3 变 $2 , 因为空字符串不被视为一个参数
