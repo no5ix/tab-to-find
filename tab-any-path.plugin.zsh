@@ -44,31 +44,36 @@ __fzf_cmd_ex() {
 
 __pre_gen_subdir_res() {
     local dir length last_str seg type_arg 
-    last_str="$1"
+    dir="$1"
     type_arg="$2"
-    dir="$3"
-    seg="$4"
+    seg="$3"
+    last_str="$4"
 
-    echo "\n __pre_gen_subdir_res last_str: ${last_str}"
-    echo "\n __pre_gen_subdir_res type_arg: ${type_arg}"
-    echo "\n __pre_gen_subdir_res seg: ${seg}"
-    echo "\n __pre_gen_subdir_res dir: ${dir}"
+#    echo "\n __pre_gen_subdir_res last_str: ${last_str}"
+#    echo "\n __pre_gen_subdir_res type_arg: ${type_arg}"
+#    echo "\n __pre_gen_subdir_res seg: ${seg}"
+#    echo "\n __pre_gen_subdir_res dir: ${dir}"
 
-    if [[ "$last_str" == */ && ! -e $last_str ]]; then
+    if [[ "$last_str" == *// && ! -e $last_str ]]; then
         type_arg=" --type d"
     fi
-    length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
-    if [ "$dir" = "/" ]; then
-        length=2
-    fi
-    if [ "$dir" = "~" ]; then
-        # 因为这个搜出来的就直接是 /User/musk/blabla 的形式
-        length=1
-    fi
-    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//'"
 
-    fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//' | while read -r line; do
-        echo "anyway : $line"
+    if [[ "$last_str" == *.. && ! -e $last_str ]]; then
+        type_arg=" --type file --type symlink"
+    fi
+
+    if [ -z "$seg" ]; then
+        length=3
+    elif [ "$dir" = "/" ]; then
+        length=2
+    else
+        dir="${dir/#'~'/$HOME}"  # 把 ~/blabla 转为 /Users/musk 不然 -d 判断会有问题
+        length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
+    fi
+
+#    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//'"
+
+    fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//' | while read -r line; do
         if [[ "$line:u" == *"$seg:u"* ]]; then
             echo "$line"
         fi
@@ -76,10 +81,11 @@ __pre_gen_subdir_res() {
 }
 
 __gen_fd_cmd() {
-    local dir length type_arg max_depth_arg last_str
-    last_str="$1"
+    local dir length type_arg max_depth_arg last_str seg
+    dir="$1"
     type_arg="$2"
-    dir="$3"
+    seg="$3"
+    last_str="$4"
 
 #    一共有几种情况:
 #    - `cd doc/test_folder/` ,而 test_folder 存在,  此时应该要递归搜索 doc下的所有
@@ -91,17 +97,26 @@ __gen_fd_cmd() {
 #    echo "\n __gen_fd_cmd type_arg: ${type_arg}"
 #    echo "\n __gen_fd_cmd dir: ${dir}"
 
-    if [[ "$last_str" == */ && ! -e $last_str ]]; then
+    if [[ "$last_str" == *// && ! -e $last_str ]]; then
         max_depth_arg=" --max-depth 1"
+        type_arg=" --type d"
     fi
-    length=$(echo -n "$dir" | wc -c) # 得到 dir 的字符串长度
-    if [ "$dir" = "/" ]; then
-        length=0
+
+    if [[ "$last_str" == *.. && ! -e $last_str ]]; then
+        max_depth_arg=" --max-depth 1"
+        type_arg=" --type file --type symlink"
     fi
-    if [ "$dir" = "~" ]; then
-        length=-1
+    
+    if [ -z "$seg" ]; then
+        length=3
+    elif [ "$dir" = "/" ]; then
+        length=2
+    else
+        dir="${dir/#'~'/$HOME}"  # 把 ~/blabla 转为 /Users/musk 不然 -d 判断会有问题
+        length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
     fi
-    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg $max_depth_arg 2>/dev/null | cut -b $(( ${length} + 2 ))- | command sed s'/\/$//'"
+#    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
+    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg $max_depth_arg 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
 }
 
 # Paste the selected file path(s) into the command line
@@ -130,9 +145,9 @@ _tab_complete() {
 
     tokens=(${(z)LBUFFER})
     cmd=${tokens[1]}
-    last_str="$1"
-    dir="$3"
-    seg="$4"
+    dir="$1"
+    seg="$3"
+    last_str="$4"
 
 #    echo "\n __fzf_file_widget_ex s1: $1"
 #    echo "\n __fzf_file_widget_ex s2: $2"
@@ -146,9 +161,9 @@ _tab_complete() {
     # 如果用户要搜索的东西已经存在了, 用户还是按了tab, 那说明不是用户想要的结果, 那就继续递归搜索下面的所有的
     # 如果用户要搜索的东西不存在那就先试着搜索当前文件夹下的
     if [[ ! -e $last_str && -n $seg ]]; then
-        echo "\n enter pre gen"
-        __pre_gen_subdir_res $@
-        return
+#        echo "\n enter pre gen"
+#        __pre_gen_subdir_res $@
+#        return
         
         l=$(__pre_gen_subdir_res $@)
     #   如果检测当前文件夹的只有一个返回结果, 而且不为空字符串则直接补全, 否则在子文件夹里递归搜索
@@ -161,6 +176,9 @@ _tab_complete() {
     fi
 
     if ! [ -n "$fd_res" ]; then
+#        __gen_fd_cmd $@
+#        return
+        
         fd_cmd=$(__gen_fd_cmd $@)
     #    echo "__fzf_file_widget_ex fd_cmd:\n "${fd_cmd}
 #        echo "\n __fzf_file_widget_ex 2 last_str: "${last_str}
@@ -212,16 +230,18 @@ _tab_complete() {
 #        echo "fd_res : "${fd_res}
 #        echo "last_str+fd_res : "${last_str}${fd_res}
 
-        if [ "$dir" = "~/" ]; then
-            # 因为这个搜出来的就直接是 /User/musk/blabla 的形式, 所以 dir 得置空
-            dir=""
-        fi
+#        if [ "$dir" = "~/" ]; then
+#            # 因为这个搜出来的就直接是 /Users/muskblabla 的形式, 所以 dir 得置空
+#            dir=""
+#        fi
         local final_path_str="${dir}${fd_res}"
-        final_path_str="${final_path_str/#$HOME/~}"  # 把 `/User/musk/` 这种替换成 `~/`
+        final_path_str="${final_path_str/#$HOME/~}"  # 把 `/Users/musk` 这种替换成 `~/`
         LBUFFER="${LBUFFER}${final_path_str}"
 
-        # 如果是文件夹就在后面加个 /
-        if [ -d ${dir}${fd_res} ]; then
+#        echo "\n final_path_str: "${final_path_str}
+        local absPath="${final_path_str/#'~'/$HOME}"  # 把 ~/blabla 转为 /Users/musk 不然 -d 判断会有问题
+#        echo "\n absPath: "${absPath}
+        if [[ -d ${absPath} && ! -L ${absPath} ]]; then  # 如果是文件夹且不是符号链接(因为软链接也能通过 -d 检测)就在后面加个 /
             LBUFFER="${LBUFFER}/"
         fi
 #        echo "\n after LBUFFER: "${LBUFFER}
@@ -240,7 +260,7 @@ _tab_complete() {
 
 tab-completion() {
     setopt localoptions noshwordsplit noksh_arrays noposixbuiltins
-    local tokens cmd
+    local tokens cmd dir seg
     local last_str=""
     local type_arg="--type file --type directory --type symlink"
 
@@ -269,7 +289,8 @@ tab-completion() {
 
     # 空tab 直接搜索
     if [ -z "${LBUFFER}" ]; then
-        _tab_complete ${last_str} ${type_arg} ${dir} ${seg}
+        # 注意这些参数的摆放位置, 因为 seg 和 last_str 是有可能为空的, 如果放在中间的话, shell 会导致 $3 变 $2 , 因为空字符串不被视为一个参数
+        _tab_complete ${dir} ${type_arg} ${seg} ${last_str}
         return
     fi
 
@@ -311,18 +332,19 @@ tab-completion() {
         fi
     fi
 
+#    echo "\n tab-completion dir: "${dir}
+#    echo "\n tab-completion seg: "${seg}
 #    echo "\n tab-completion type_arg: "${type_arg}
 #    echo "\n tab-completion last_str: "${last_str}
 #    echo "\n tab-completion cmd: "${cmd}
 #    echo "\n tab-completion shouldTakeover: "${shouldTakeover}
 
     if [ $shouldTakeover -eq 1 ]; then
-        _tab_complete ${last_str} ${type_arg} ${dir} ${seg}
-
+        # 注意这些参数的摆放位置, 因为 seg 和 last_str 是有可能为空的, 如果放在中间的话, shell 会导致 $3 变 $2 , 因为空字符串不被视为一个参数
+        _tab_complete ${dir} ${type_arg} ${seg} ${last_str}
     else
         zle ${__tab_default_completion:-expand-or-complete}
     fi
-
 }
 
 [ -z "$__tab_default_completion" ] && {
