@@ -285,6 +285,9 @@ tab-completion() {
         seg=""
     else
         seg="$(basename -- "$last_str")"
+        if [[ "${seg}" == *".." || "${seg}" == *"//" ]]; then
+            seg=${seg%??}
+        fi
     fi
 
     # 空tab 直接搜索
