@@ -1,5 +1,5 @@
 
-# tab-any-path
+# tab-to-find
 
 支持命令对于任何目录和文件的路径的 tab 动态补全
 
@@ -10,7 +10,7 @@
 
 # Demo
 
-![demo](tab-any-path-demo.gif)
+![demo](tab-to-find-demo.gif)
 
 
 # 功能
@@ -38,7 +38,7 @@ Press tab for completion as usual
 
 1. 先安装fd, 按照 [fd的安装方法](https://github.com/sharkdp/fd#installation) 安装一下就行(一般来说就是一行命令就搞定), 不用额外配置
 2. 再安装fzf, 按照 [fzf的安装方法](https://github.com/junegunn/fzf#installation) 安装一下就行(一般来说就是一行命令就搞定), 不用额外配置
-3. 然后再按照下方的[手动方式](#手动方式) 或者 走[Oh-My-Zsh方式](#OhMyZsh方式)的方式来安装 `tab-any-path` 就可以了
+3. 然后再按照下方的[手动方式](#手动方式) 或者 走[Oh-My-Zsh方式](#OhMyZsh方式)的方式来安装 `tab-to-find` 就可以了
 
 
 ## 手动方式
@@ -46,13 +46,13 @@ Press tab for completion as usual
 先克隆一波这个项目
 
 ```zsh
-git clone https://github.com/no5ix/tab-any-path ~/somewhere
+git clone https://github.com/no5ix/tab-to-find ~/somewhere
 ```
 
 然后把下面这行加到你的 `~/.zshrc`.
 
 ```zsh
-source ~/somewhere/tab-any-path.plugin.zsh
+source ~/somewhere/tab-to-find.plugin.zsh
 ```
 
 ## OhMyZsh方式
@@ -60,10 +60,10 @@ source ~/somewhere/tab-any-path.plugin.zsh
 执行下面这行命令
 
 ```zsh
-git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/tab-any-path
+git clone https://github.com/no5ix/tab-to-find ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/tab-to-find
 ```
 
-1. 然后`vim ~/.zshrc`, 找到七八十行左右 `plugins=(git)` 的位置 比如原来是 `plugins=(git)` 则改为 `plugins=(git tab-any-path)`
+1. 然后`vim ~/.zshrc`, 找到七八十行左右 `plugins=(git)` 的位置 比如原来是 `plugins=(git)` 则改为 `plugins=(git tab-to-find)`
 2. `source ~/.zshrc` 或者重启 zsh
 
 
@@ -71,7 +71,7 @@ git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custo
 
 1. Install [fd](https://github.com/sharkdp/fd) by following its [installation instruction](https://github.com/sharkdp/fd#installation).
 2. Install [fzf](https://github.com/junegunn/fzf) by following its [installation instruction](https://github.com/junegunn/fzf#installation).
-3. then install `tab-any-path` by following [Manual](#Manual) or [Oh-My-Zsh](#OhMyZsh) below
+3. then install `tab-to-find` by following [Manual](#Manual) or [Oh-My-Zsh](#OhMyZsh) below
 
 
 ## Manual
@@ -79,22 +79,22 @@ git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custo
 clone this repository.
 
 ```zsh
-git clone https://github.com/no5ix/tab-any-path ~/somewhere
+git clone https://github.com/no5ix/tab-to-find ~/somewhere
 ```
 
 Then add the following line to your `~/.zshrc`.
 
 ```zsh
-source ~/somewhere/tab-any-path.plugin.zsh
+source ~/somewhere/tab-to-find.plugin.zsh
 ```
 
 
 ## OhMyZsh
 
-Clone this repository to your custom directory and then add `tab-any-path` to your plugin list.
+Clone this repository to your custom directory and then add `tab-to-find` to your plugin list.
 
 ```zsh
-git clone https://github.com/no5ix/tab-any-path ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/tab-any-path
+git clone https://github.com/no5ix/tab-to-find ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/tab-to-find
 ```
 
 
