@@ -50,10 +50,11 @@ __pre_gen_subdir_res() {
     seg="$4"
 
 #    echo "\n __pre_gen_subdir_res last_str: ${last_str}"
-#    echo "\n __pre_gen_subdir_res type_arg: ${type_arg}"
+   #    echo "\n __pre_gen_subdir_res type_arg: ${type_arg}"
 #    echo "\n __pre_gen_subdir_res seg: ${seg}"
 #    echo "\n __pre_gen_subdir_res dir: ${dir}"
 
+    # 能进来这个函数就说明 `! -e $last_str` 肯定为真, 也就是 last_str 这个文件/目录 肯定存在
     if [[ "$last_str" == *// && ! -e $last_str ]]; then
         type_arg=" --type d"
     fi
@@ -88,21 +89,24 @@ __gen_fd_cmd() {
     seg="$4"
 
 #    一共有几种情况:
-#    - `cd doc/test_folder/` ,而 test_folder 存在,  此时应该要递归搜索 doc下的所有
+#    - `cd doc/test_folder/` ,而 test_folder 存在,  此时应该要递归搜索 doc下的所有目录和文件, 因为这个最后的/大概率是本脚本帮用户加上的
 #    - `cd doc/test_folder` , 而 test_folder 存在, 此时应该要递归搜索 doc下的所有
 #    - `cd doc/dafadfa` , 而 dafadfa 不存在, 此时应该要递归搜索 doc下的所有
-#    - `cd doc/dafadfa/` , 而 dafadfa/ 不存在, 此时应该要只搜索 doc下的这一层, 而非递归
+#    - `cd doc/dafadfa/` , 而 dafadfa/ 不存在, 此时应该要只搜索 doc下的这一层的目录, 而非递归
 
 #    echo "\n __gen_fd_cmd last_str: ${last_str}"
 #    echo "\n __gen_fd_cmd type_arg: ${type_arg}"
 #    echo "\n __gen_fd_cmd dir: ${dir}"
 
-    if [[ "$last_str" == *// && ! -e $last_str ]]; then
+    if [[ "$last_str" == *// ]]; then
+        max_depth_arg=" --max-depth 1"
+        type_arg=" --type d"
+    elif [[ "$last_str" == */ && ! -e $last_str ]]; then
         max_depth_arg=" --max-depth 1"
         type_arg=" --type d"
     fi
 
-    if [[ "$last_str" == *.. && ! -e $last_str ]]; then
+    if [[ "$last_str" == *.. ]]; then
         max_depth_arg=" --max-depth 1"
         type_arg=" --type file --type symlink"
     fi
@@ -161,7 +165,7 @@ _tab_complete() {
     # 如果用户要搜索的东西已经存在了, 用户还是按了tab, 那说明不是用户想要的结果, 那就继续递归搜索下面的所有的
     # 如果用户要搜索的东西不存在那就先试着搜索当前文件夹下的
     if [[ ! -e $last_str && -n $seg ]]; then
-#        echo "\n enter pre gen"
+        #        echo "\n enter pre gen"
 #        __pre_gen_subdir_res $@
 #        return
         
@@ -281,7 +285,7 @@ tab-completion() {
     fi
 
     # 获取要放到 fzf 窗口的待搜字符串 seg
-    if [[ -e $last_str || "${last_str}" == "-"* || "${last_str}" == "--"* || "$last_str" = "../" || "$last_str" = ".." || "$last_str" = "~/" || "$last_str" = "~" ]]; then
+    if [[ "${last_str}" == "-"* || "${last_str}" == "--"* || "$last_str" = "../" || "$last_str" = ".." || "$last_str" = "~/" || "$last_str" = "~" ]]; then
         seg=""
     else
         seg="$(basename -- "$last_str")"
