@@ -69,7 +69,7 @@ __pre_gen_subdir_res() {
         length=2
     else
         dir="${dir/#'~'/$HOME}"  # 把 ~/blabla 转为 /Users/musk 不然 -d 判断会有问题
-        length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
+        length=$(( ${#dir} + 2 ))  # 得到 dir 的字符串长度
     fi
 
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//'"
@@ -117,7 +117,7 @@ __gen_fd_cmd() {
         length=2
     else
         dir="${dir/#'~'/$HOME}"  # 把 ~/blabla 转为 /Users/musk 不然 -d 判断会有问题
-        length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
+        length=$(( ${#dir} + 2 ))  # 得到 dir 的字符串长度
     fi
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
     echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg $max_depth_arg 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
@@ -146,12 +146,15 @@ _tab_complete() {
     setopt localoptions nonomatch
     local l matches fzf tokens last_str fd_cmd fd_res seg cmd dir
     local is_pre_gen=0
+    local last_str_exists=0
 
     tokens=(${(z)LBUFFER})
     cmd=${tokens[1]}
     dir="$1"
     last_str="$3"
     seg="$4"
+    
+    [[ -e $last_str ]] && last_str_exists=1
 
 #    echo "\n __fzf_file_widget_ex s1: $1"
 #    echo "\n __fzf_file_widget_ex s2: $2"
@@ -164,7 +167,7 @@ _tab_complete() {
 
     # 如果用户要搜索的东西已经存在了, 用户还是按了tab, 那说明不是用户想要的结果, 那就继续递归搜索下面的所有的
     # 如果用户要搜索的东西不存在那就先试着搜索当前文件夹下的
-    if [[ ! -e $last_str && -n $seg ]]; then
+    if [[ $last_str_exists -eq 0 && -n $seg ]]; then
         #        echo "\n enter pre gen"
 #        __pre_gen_subdir_res $@
 #        return
@@ -216,12 +219,7 @@ _tab_complete() {
     #    当小于等于 2 的时候, 比如 `cd do/` 此时应该把 LBUFFER 变成 `cd `
         if [ $tokens_cnt -gt 2 ]; then
             LBUFFER=""
-            i=1
-            while [ $i -lt $tokens_cnt ]
-            do
-                LBUFFER=$LBUFFER"${tokens[$i]} "
-                let i++
-            done
+            LBUFFER="${(j: :)tokens[1,-2]} "
         else
             LBUFFER="${tokens[1]} "
         fi
