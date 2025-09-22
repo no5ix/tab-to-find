@@ -74,11 +74,7 @@ __pre_gen_subdir_res() {
 
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//'"
 
-    fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//' | while read -r line; do
-        if [[ "$line:u" == *"$seg:u"* ]]; then
-            echo "$line"
-        fi
-    done
+    fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b ${length}- | sed 's|/$||' | grep -i "$seg"
 }
 
 __gen_fd_cmd() {
@@ -129,16 +125,8 @@ __get_fd_result() {
 #    echo "\n"
 #    local cmd="command fd . --follow -HI --exclude '.git' --exclude '.svn' --type f --max-depth 5 2>/dev/null"
     local cmd="$1"
-    fzf_bindings=$(__tab_fzf_bindings)
     setopt localoptions pipefail no_aliases 2> /dev/null
-    local item
-#    eval "$cmd" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS $FZF_CTRL_T_OPTS" $(__fzf_cmd_ex) -m "$@" | while read item; do
-    eval "$cmd" | FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore --bind '${fzf_bindings}' $FZF_DEFAULT_OPTS $FZF_CTRL_T_OPTS" $(__fzf_cmd_ex) -m --query "$2" | while read item; do
-        echo -n "${(q)item}"
-    done
-    local ret=$?
-    echo
-    return $ret
+    eval "$cmd" | FZF_DEFAULT_OPTS="--height=40% --reverse --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS" $(__fzf_cmd_ex) --query="$2" --print-query --expect=enter | tail -1
 }
 
 # 这个不是提前fd生成好结果供挑选, 而是直接 fzf 动态 fd 的, 适合深度搜索, depth 在 1 层的用 _tab_complete 函数比较适合
@@ -174,7 +162,7 @@ _tab_complete() {
         
         l=$(__pre_gen_subdir_res $@)
     #   如果检测当前文件夹的只有一个返回结果, 而且不为空字符串则直接补全, 否则在子文件夹里递归搜索
-        if [[ $(echo $l | wc -l) -eq 1 && -n "$l" ]]; then
+        if [[ $(printf '%s\n' "$l" | wc -l) -eq 1 && -n "$l" ]]; then
     #        echo "\n only 1: "$l
     #        echo "\n"
             is_pre_gen=1
@@ -217,12 +205,8 @@ _tab_complete() {
     #    当已经有的用户输入用空格 split 之后的元素大于 2 之后, 比如 `mv doc ppt` , 那此时 tokens_cnt 为 3
     #    当大于 2 的时候此时应该把 LBUFFER 变成 `mv doc `
     #    当小于等于 2 的时候, 比如 `cd do/` 此时应该把 LBUFFER 变成 `cd `
-        if [ $tokens_cnt -gt 2 ]; then
-            LBUFFER=""
-            LBUFFER="${(j: :)tokens[1,-2]} "
-        else
-            LBUFFER="${tokens[1]} "
-        fi
+        LBUFFER="${tokens[1]} "
+        [ $tokens_cnt -gt 2 ] && LBUFFER="${(j: :)tokens[1,-2]} "
 
 #        echo "\n before LBUFFER: "${LBUFFER}
 #        echo "\n 2 last_str : "${last_str}
@@ -236,14 +220,10 @@ _tab_complete() {
 #            # 因为这个搜出来的就直接是 /Users/muskblabla 的形式, 所以 dir 得置空
 #            dir=""
 #        fi
-        local final_path_str="${dir}${fd_res}"
-        final_path_str="${final_path_str/#$HOME/~}"  # 把 `/Users/musk` 这种替换成 `~/`
-        LBUFFER="${LBUFFER}${final_path_str}"
-
-#        echo "\n final_path_str: "${final_path_str}
-        local absPath="${final_path_str/#'~'/$HOME}"  # 把 ~/blabla 转为 /Users/musk 不然 -d 判断会有问题
-#        echo "\n absPath: "${absPath}
-        if [[ -d ${absPath} && ! -L ${absPath} ]]; then  # 如果是文件夹且不是符号链接(因为软链接也能通过 -d 检测)就在后面加个 /
+        LBUFFER="${LBUFFER}${dir}${fd_res}"
+        
+        # 优化：只在需要时检查目录
+        if [[ "$type_arg" == *"directory"* && "${fd_res}" != */ ]]; then
             LBUFFER="${LBUFFER}/"
         fi
 #        echo "\n after LBUFFER: "${LBUFFER}
@@ -251,13 +231,10 @@ _tab_complete() {
 
     if [ $is_pre_gen -eq 1 ]; then
         zle redisplay
-        typeset -f zle-line-init >/dev/null && zle zle-line-init
         return
     fi
 
-    local ret=$?
-    zle reset-prompt
-    return $ret
+    zle redisplay
 }
 
 tab-completion() {
