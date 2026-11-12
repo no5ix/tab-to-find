@@ -83,13 +83,12 @@ __gen_fd_cmd() {
 }
 
 __get_fd_result() {
-    local cmd="$1" query="$2" fzf_cmd name search_dir
+    local cmd="$1" query="$2" fzf_cmd search_dir name
     search_dir="$3"
     [[ "$search_dir" == "~" ]] && search_dir="$HOME"
     [[ "$search_dir" == "~/"* ]] && search_dir="$HOME/${search_dir#~/}"
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-
     if [[ "$search_dir" == "$HOME" ]]; then
         {
             for name in Documents Downloads Desktop Applications Movies Music Pictures Projects; do
