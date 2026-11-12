@@ -82,23 +82,24 @@ __gen_fd_cmd() {
     print -r -- "command fd . ${(q)search_dir} ${(j: :)fd_args} ${(j: :)type_args} ${(j: :)depth_args} --color never 2>/dev/null"
 }
 
-# Rank common home folders first, then retain all recursive visible results.
-__tab_home_priority() {
-    local search_root="$1" name
-    local -a preferred
-    [[ "$search_root" == "~" || "$search_root" == "$HOME" ]] || return 0
-    preferred=(Documents Downloads Desktop Applications Movies Music Pictures Projects)
-    for name in "${preferred[@]}"; do
-        [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name/"
-    done
-}
-
 __get_fd_result() {
-    local cmd="$1" query="$2" fzf_cmd
+    local cmd="$1" query="$2" fzf_cmd item
+    local -a priority
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-    eval "$cmd" |
-        FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
+    if [[ "$cmd" == *"$HOME"* ]]; then
+        priority=(Documents Downloads Desktop Applications Movies Music Pictures Projects)
+        {
+            for item in "${priority[@]}"; do
+                [[ -d "$HOME/$item" && ! -L "$HOME/$item" ]] && print -r -- "$item/"
+            done
+            eval "$cmd"
+        } | awk '!seen[$0]++' |
+            FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
+    else
+        eval "$cmd" |
+            FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
+    fi
 }
 
 _tab_complete() {
