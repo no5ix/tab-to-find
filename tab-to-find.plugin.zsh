@@ -102,16 +102,16 @@ __gen_fd_cmd() {
 
     local fd_mode_args=""
     if [[ "$last_str" == *// ]]; then
-        max_depth_arg=" --max-depth 1"
+        # max_depth_arg=" --max-depth 1"
         type_arg=" --type d"
         fd_mode_args="--hidden --no-ignore"
-    elif [[ "$last_str" == */ && ! -e $last_str ]]; then
-        max_depth_arg=" --max-depth 1"
-        type_arg=" --type d"
+    # elif [[ "$last_str" == */ && ! -e $last_str ]]; then
+    #     max_depth_arg=" --max-depth 1"
+    #     type_arg=" --type d"
     fi
 
     if [[ "$last_str" == *.. ]]; then
-        max_depth_arg=" --max-depth 1"
+        # max_depth_arg=" --max-depth 1"
         type_arg=" --type file --type symlink"
         fd_mode_args="--hidden --no-ignore"
     fi
