@@ -120,7 +120,7 @@ _tab_complete() {
 
     if [[ -z "$fd_res" ]]; then
         fd_cmd="$(__gen_fd_cmd "$dir" "$type_arg" "$last_str")"
-        fd_res="$(__get_fd_result "$fd_cmd" "$seg")"
+        fd_res="$(__get_fd_result "$fd_cmd" "$seg" "$dir")"
     fi
 
     if [[ -n "$fd_res" ]]; then
