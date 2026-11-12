@@ -83,9 +83,8 @@ __gen_fd_cmd() {
 }
 
 __get_fd_result() {
-    local cmd="$1" query="$2" fzf_cmd name search_root search_dir
-    search_root="$3"
-    search_dir="$search_root"
+    local cmd="$1" query="$2" fzf_cmd name search_dir
+    search_dir="$3"
     [[ "$search_dir" == "~" ]] && search_dir="$HOME"
     [[ "$search_dir" == "~/"* ]] && search_dir="$HOME/${search_dir#~/}"
     fzf_cmd="$(__fzf_cmd_ex)"
