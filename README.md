@@ -7,6 +7,7 @@ One Tab enables interactive and dynamic path search using Zsh, [fd](https://gith
 - Normal search excludes hidden and ignore-matched entries using fd defaults.
 - Hidden and ignored entries can be included deliberately with environment variables.
 - Completion uses native Zsh path operations where practical and avoids forcing a prompt reset after selection.
+- Searches rooted at `~` promote common home folders (Documents, Downloads, Desktop, Applications, Movies, Music, Pictures, and Projects) before the recursive results.
 
 ## Requirements
 
