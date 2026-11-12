@@ -86,8 +86,19 @@ __get_fd_result() {
     local cmd="$1" query="$2" fzf_cmd
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-    eval "$cmd" |
-        FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
+    if [[ "$cmd" == *"$HOME"* || "$cmd" == *'\~'* ]]; then
+        {
+            local name
+            for name in Documents Downloads Desktop Applications Movies Music Pictures Projects; do
+                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name/"
+            done
+            eval "$cmd"
+        } | awk '!seen[$0]++' |
+            FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
+    else
+        eval "$cmd" |
+            FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
+    fi
 }
 
 _tab_complete() {
