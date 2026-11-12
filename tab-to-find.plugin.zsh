@@ -83,11 +83,11 @@ __gen_fd_cmd() {
 }
 
 __get_fd_result() {
-    local cmd="$1" query="$2" fzf_cmd name search_root
+    local cmd="$1" query="$2" fzf_cmd name
+    local search_root="$3"
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-    search_root="${cmd#command fd . }"
-    if [[ "$search_root" == "\\~ "* || "$search_root" == "\\~/"* || "$search_root" == "$HOME "* || "$search_root" == "$HOME/"* ]]; then
+    if [[ "$search_root" == "~" || "$search_root" == "$HOME" ]]; then
         {
             for name in Documents Downloads Desktop Applications Movies Music Pictures Projects; do
                 [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name/"
@@ -114,7 +114,7 @@ _tab_complete() {
             fd_res="${candidates[1]}"
         elif (( ${#candidates[@]} > 1 )); then
             fd_cmd="$(__gen_fd_cmd "$dir" "$type_arg" "$last_str")"
-            fd_res="$(__get_fd_result "$fd_cmd" "$seg")"
+            fd_res="$(__get_fd_result "$fd_cmd" "$seg" "$dir")"
         fi
     fi
 
