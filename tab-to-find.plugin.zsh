@@ -87,7 +87,7 @@ __get_fd_result() {
     local -a priority
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-    if [[ "$cmd" == *"$HOME"* ]]; then
+    if [[ "$cmd" == *"$HOME"* || "$cmd" == *'\~'* ]]; then
         priority=(Documents Downloads Desktop Applications Movies Music Pictures Projects)
         {
             for item in "${priority[@]}"; do
