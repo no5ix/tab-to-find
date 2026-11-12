@@ -92,7 +92,7 @@ __get_fd_result() {
     if [[ "$search_dir" == "$HOME" ]]; then
         {
             for name in Documents Downloads Desktop Applications Movies Music Pictures Projects; do
-                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name/"
+                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name"
             done
             eval "$cmd" | sed 's|/$||' | sed "s|^${HOME}/||"
         } | awk '!seen[$0]++' |
