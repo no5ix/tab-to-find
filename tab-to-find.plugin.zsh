@@ -83,15 +83,15 @@ __gen_fd_cmd() {
 }
 
 __get_fd_result() {
-    local cmd="$1" query="$2" fzf_cmd name
-    local search_root="$3" home_root=0
+    local cmd="$1" query="$2" fzf_cmd name search_root
+    search_root="$3"
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-    [[ "$search_root" == "~" || "$search_root" == "$HOME" ]] && home_root=1
-    if (( home_root )); then
+
+    if [[ "$search_root" == "~" || "$search_root" == "$HOME" ]]; then
         {
             for name in Documents Downloads Desktop Applications Movies Music Pictures Projects; do
-                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name/"
+                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$HOME/$name"
             done
             eval "$cmd"
         } | awk '!seen[$0]++' |
