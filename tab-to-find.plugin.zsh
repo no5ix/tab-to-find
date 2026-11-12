@@ -54,13 +54,15 @@ __pre_gen_subdir_res() {
 #    echo "\n __pre_gen_subdir_res seg: ${seg}"
 #    echo "\n __pre_gen_subdir_res dir: ${dir}"
 
-    # 能进来这个函数就说明 `! -e $last_str` 肯定为真, 也就是 last_str 这个文件/目录 肯定存在
-    if [[ "$last_str" == *// && ! -e $last_str ]]; then
+    local fd_mode_args=""
+    # Normal mode relies on fd defaults (no hidden or ignored entries).
+    # Explicit suffix modes opt in to hidden and ignored entries.
+    if [[ "$last_str" == *// ]]; then
         type_arg=" --type d"
-    fi
-
-    if [[ "$last_str" == *.. && ! -e $last_str ]]; then
+        fd_mode_args="--hidden --no-ignore"
+    elif [[ "$last_str" == *.. ]]; then
         type_arg=" --type file --type symlink"
+        fd_mode_args="--hidden --no-ignore"
     fi
 
     if [ -z "$seg" ]; then
@@ -74,7 +76,7 @@ __pre_gen_subdir_res() {
 
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//'"
 
-    fd . "$dir" --follow -HI --exclude '.git' --exclude '.svn' $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//' | while read -r line; do
+    fd . "$dir" --follow --exclude '.git' --exclude '.svn' $fd_mode_args $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//' | while read -r line; do
         if [[ "$line:u" == *"$seg:u"* ]]; then
             echo "$line"
         fi
@@ -98,9 +100,11 @@ __gen_fd_cmd() {
 #    echo "\n __gen_fd_cmd type_arg: ${type_arg}"
 #    echo "\n __gen_fd_cmd dir: ${dir}"
 
+    local fd_mode_args=""
     if [[ "$last_str" == *// ]]; then
         max_depth_arg=" --max-depth 1"
         type_arg=" --type d"
+        fd_mode_args="--hidden --no-ignore"
     elif [[ "$last_str" == */ && ! -e $last_str ]]; then
         max_depth_arg=" --max-depth 1"
         type_arg=" --type d"
@@ -109,6 +113,7 @@ __gen_fd_cmd() {
     if [[ "$last_str" == *.. ]]; then
         max_depth_arg=" --max-depth 1"
         type_arg=" --type file --type symlink"
+        fd_mode_args="--hidden --no-ignore"
     fi
     
     if [ -z "$seg" ]; then
@@ -120,7 +125,7 @@ __gen_fd_cmd() {
         length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
     fi
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
-    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg $max_depth_arg 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
+    echo "fd . $dir --follow --exclude '.git' --exclude '.svn' $fd_mode_args $type_arg $max_depth_arg 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
 }
 
 # Paste the selected file path(s) into the command line
