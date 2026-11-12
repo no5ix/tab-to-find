@@ -93,9 +93,9 @@ __get_fd_result() {
     if [[ "$search_dir" == "$HOME" ]]; then
         {
             for name in Documents Downloads Desktop Applications Movies Music Pictures Projects; do
-                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name"
+                [[ -d "$HOME/$name" && ! -L "$HOME/$name" ]] && print -r -- "$name/"
             done
-            eval "$cmd" | sed "s|^${HOME}/||"
+            eval "$cmd" | sed 's|/$||' | sed "s|^${HOME}/||"
         } | awk '!seen[$0]++' |
             FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
     else
