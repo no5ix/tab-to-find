@@ -83,23 +83,11 @@ __gen_fd_cmd() {
 }
 
 __get_fd_result() {
-    local cmd="$1" query="$2" fzf_cmd item
-    local -a priority
+    local cmd="$1" query="$2" fzf_cmd
     fzf_cmd="$(__fzf_cmd_ex)"
     setopt localoptions pipefail no_aliases
-    if [[ "$cmd" == *"$HOME"* || "$cmd" == *'\~'* ]]; then
-        priority=(Documents Downloads Desktop Applications Movies Music Pictures Projects)
-        {
-            for item in "${priority[@]}"; do
-                [[ -d "$HOME/$item" && ! -L "$HOME/$item" ]] && print -r -- "$item/"
-            done
-            eval "$cmd"
-        } | awk '!seen[$0]++' |
-            FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
-    else
-        eval "$cmd" |
-            FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
-    fi
+    eval "$cmd" |
+        FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} --reverse --bind=ctrl-z:ignore ${FZF_DEFAULT_OPTS} ${FZF_CTRL_T_OPTS}" ${=fzf_cmd} -m --query "$query"
 }
 
 _tab_complete() {
