@@ -115,9 +115,6 @@ _tab_complete() {
         candidates=("${(@f)$(__pre_gen_subdir_res "$dir" "$type_arg" "$last_str" "$seg")}")
         if (( ${#candidates[@]} == 1 )); then
             fd_res="${candidates[1]}"
-        elif (( ${#candidates[@]} > 1 )); then
-            fd_cmd="$(__gen_fd_cmd "$dir" "$type_arg" "$last_str")"
-            fd_res="$(__get_fd_result "$fd_cmd" "$seg" "$dir")"
         fi
     fi
 
