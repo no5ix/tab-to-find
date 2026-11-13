@@ -76,7 +76,7 @@ __pre_gen_subdir_res() {
 
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b $(( ${length} ))- | command sed s'/\/$//'"
 
-    fd . "$dir" --follow --exclude '.git' --exclude '.svn' $fd_mode_args $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//' | while read -r line; do
+    fd . "$dir" --follow --no-ignore-vcs --exclude '.git' --exclude '.svn' $fd_mode_args $(echo $type_arg) --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//' | while read -r line; do
         if [[ "$line:u" == *"$seg:u"* ]]; then
             echo "$line"
         fi
@@ -125,7 +125,7 @@ __gen_fd_cmd() {
         length=$(( $(echo -n "$dir" | wc -c) + 2 ))  # 得到 dir 的字符串长度
     fi
 #    echo "fd . $dir --follow -HI --exclude '.git' --exclude '.svn' $type_arg --max-depth 1 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
-    echo "fd . $dir --follow --exclude '.git' --exclude '.svn' $fd_mode_args $type_arg $max_depth_arg 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
+    echo "fd . $dir --follow --no-ignore-vcs --exclude '.git' --exclude '.svn' $fd_mode_args $type_arg $max_depth_arg 2>/dev/null | cut -b ${length}"-" | command sed s'/\/$//'"
 }
 
 # Paste the selected file path(s) into the command line
